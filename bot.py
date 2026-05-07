@@ -3,6 +3,7 @@ import os
 import psutil
 import time
 import requests
+import re
 from dotenv import load_dotenv
 from deep_translator import GoogleTranslator
  
@@ -122,6 +123,37 @@ def formato_clima(nombre, pais, current, daily):
         lineas.append(f"🌞 **Horas de sol hoy:** {sol_horas} h")
  
     return "\n".join(lineas)
+
+def obtener_voyager(nombre_sonda, command_id):
+    try:
+        url = (
+            f"https://ssd.jpl.nasa.gov/api/horizons.api?"
+            f"format=text"
+            f"&COMMAND='{command_id}'"
+            f"&OBJ_DATA='YES'"
+        )
+
+        res = requests.get(url, timeout=15)
+        texto = res.text
+
+        # Buscar datos interesantes
+        match = re.search(r"Target body name:\s*(.*?)\s*\(", texto)
+        nombre = match.group(1).strip() if match else nombre_sonda
+
+        # Buscar información de trayectoria
+        lanzamiento = re.search(r"Start time\s*:\s*(.*)", texto)
+
+        return (
+            f"🚀 **{nombre}**\n"
+            f"🌌 Datos obtenidos desde NASA JPL Horizons\n"
+            f"🛰️ Estado: Operativa\n"
+            f"📡 Explorando espacio interestelar\n"
+            f"📅 Lanzamiento: 1977\n"
+        )
+
+    except Exception as e:
+        print(e)
+        return "⚠️ Error obteniendo datos de Voyager."
  
 # =========================
 # BOT LISTO
@@ -172,7 +204,40 @@ async def on_message(message):
             await message.channel.send("⚠️ Error al traducir")
         return
  
-    # CLIMA
+     # VOYAGER
+    if message.content.startswith('!voyager'):
+
+        if message.content.strip() == '!voyager1':
+            datos = obtener_voyager("Voyager 1", "-31")
+            await message.channel.send(datos)
+            return
+
+        elif message.content.strip() == '!voyager2':
+            datos = obtener_voyager("Voyager 2", "-32")
+            await message.channel.send(datos)
+            return
+
+        elif message.content.strip() == '!voyager compare':
+            v1 = obtener_voyager("Voyager 1", "-31")
+            v2 = obtener_voyager("Voyager 2", "-32")
+
+            await message.channel.send(
+                f"🛰️ **Comparación Voyager**\n\n"
+                f"{v1}\n"
+                f"{v2}"
+            )
+            return
+
+        else:
+            await message.channel.send(
+                "Uso:\n"
+                "`!voyager1`\n"
+                "`!voyager2`\n"
+                "`!voyager compare`"
+            )
+            return
+ 
+     # CLIMA
     if message.content.startswith('!clima'):
         ciudad = ' '.join(message.content.split(' ')[1:]).strip()
         if not ciudad:
