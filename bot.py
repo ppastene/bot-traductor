@@ -590,12 +590,12 @@ async def on_message(message):
         )
 
         ram = psutil.virtual_memory()
-
-        load_text = (
-
-            f"📈 Load: "
-            f"{round(os.getloadavg()[0], 2)} "
-            f"(1m)"
+        if ram.used < 1024 ** 3:
+            ram_usage_text = f"{round(ram.used / (1024 ** 2), 1)} MB"
+            ram_total_text = f"{round(ram.total / (1024 ** 2), 1)} MB"
+        else:
+            ram_usage_text = f"{round(ram.used / 1024 ** 3, 2)} GB"
+            ram_total_text = f"{round(ram.total / 1024 ** 3, 2)} GB"
 
             if hasattr(os, "getloadavg")
 
@@ -635,6 +635,7 @@ async def on_message(message):
             f"⏱️ Uptime: {uptime_str}\n"
             f"🧠 CPU: {cpu}%\n"
             f"🌡️ Temp CPU: {temp_cpu}\n"
+            f"💾 Uso de RAM: {ram.percent}% ({ram_usage_text}) | RAM Total: {ram_total_text} \n"
         )
 
         return
